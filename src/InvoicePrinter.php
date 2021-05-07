@@ -15,7 +15,7 @@ namespace Konekt\PdfInvoice;
 
 use FPDF;
 
-// include '../vendor/setasign/fpdf/fpdf.php'; for run examples
+// include '../vendor/setasign/fpdf/fpdf.php';
 
 class InvoicePrinter extends FPDF
 {
@@ -244,7 +244,7 @@ class InvoicePrinter extends FPDF
         $this->reference = ' '. $reference;
     }
 
-    public function setNumberFormat($decimals = '.', $thousands_sep = ',', $alignment = 'left', $space = true, $negativeParenthesis = false, $toRemove = '')
+    public function setNumberFormat($decimals = '.', $thousands_sep = ',', $alignment = 'left', $space = true, $negativeParenthesis = false, $toRemove = [])
     {
         $this->referenceformat = [$decimals, $thousands_sep, $alignment, $space, $negativeParenthesis, $toRemove];
     }
@@ -268,8 +268,13 @@ class InvoicePrinter extends FPDF
         $space = $spaceBetweenCurrencyAndAmount ? ' ' : '';
         $negativeParenthesis = isset($this->referenceformat[4]) ? (bool) $this->referenceformat[4] : false;
         $toRemove = $this->referenceformat[5];
+        $removeWith = [];        
 
-        $number = str_replace($toRemove, '', number_format($price, 2, $decimalPoint, $thousandSeparator));
+        for ($i=0; $i < count((array)$toRemove); $i++) { 
+            array_push($removeWith, '');
+        }
+
+        $number = str_replace($toRemove, $removeWith, number_format($price, 2, $decimalPoint, $thousandSeparator));
         if ($negativeParenthesis && $price < 0) {
             $number = substr($number, 1);
             if ('right' == $alignment) {
@@ -765,7 +770,7 @@ class InvoicePrinter extends FPDF
         $badgeY = $this->getY();
 
         //Add totals
-        if ($this->totals) {
+        /* if ($this->totals) {
             foreach ($this->totals as $total) {
                 $this->SetTextColor(50, 50, 50);
                 $this->SetFillColor($bgcolor, $bgcolor, $bgcolor);
@@ -801,6 +806,16 @@ class InvoicePrinter extends FPDF
                 $this->Ln();
                 $this->Ln($this->columnSpacing);
             }
+        } */
+        if ($this->totals) {
+            $totals_names = array();
+            $totals_values = array();
+            foreach ($this->totals as $total) {
+                array_push($totals_names, $total['name']);
+                array_push($totals_values, $total['value']);
+            }
+            $this->Ln();
+            $this->TotalTable($totals_names, $totals_values);
         }
         $this->productsEnded = true;
         $this->Ln();
@@ -868,9 +883,11 @@ class InvoicePrinter extends FPDF
                 $this->signature,
                 $rMargin,
                 null,
-                42.0,
+                0,
                 28.0
             );
+        }else{
+            $this->ln(10);
         }
 
         //Signature Footer
@@ -1004,5 +1021,31 @@ class InvoicePrinter extends FPDF
         if (isset($this->discountField)) {
             $this->columns += 1;
         }
+    }
+
+    function TotalTable($header, $data)
+    {
+        // Colors, line width and bold font
+        $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->SetTextColor(255);
+        $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);        
+        $this->SetLineWidth(.3);
+        $this->SetFont('','B');
+        // Header        
+        for($i=0;$i<count($header);$i++)
+            $this->Cell($i % 2 == 0 ? 35 : 30,7,$header[$i],1,0,'C',true);
+        $this->Ln();
+        // Color and font restoration
+        $this->SetFillColor(224,235,255);
+        $this->SetTextColor(0);
+        $this->SetFont('');
+        // Data        
+        for($y=0;$y<count($data);$y++)
+        {
+            $this->Cell($y % 2 == 0 ? 35 : 30,6,$data[$y],'LRB',0,'C',$y == count($data) - 1);            
+        }        
+        // Closing line        
+        $this->Ln();
+        $this->Ln($this->columnSpacing);
     }
 }
