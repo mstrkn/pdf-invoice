@@ -15,6 +15,8 @@ namespace Konekt\PdfInvoice;
 
 use FPDF;
 
+// include '../vendor/setasign/fpdf/fpdf.php'; for run examples
+
 class InvoicePrinter extends FPDF
 {
     public const ICONV_CHARSET_INPUT = 'UTF-8';
@@ -25,7 +27,7 @@ class InvoicePrinter extends FPDF
     public $font = 'helvetica';                 /* Font Name : See inc/fpdf/font for all supported fonts */
     public $columnOpacity = 0.06;               /* Items table background color opacity. Range (0.00 - 1) */
     public $columnSpacing = 0.3;                /* Spacing between Item Tables */
-    public $referenceformat = ['.', ',', 'left', false, false];    /* Currency formater */
+    public $referenceformat = ['.', ',', 'left', false, false, ''];    /* Currency formater */
     public $margins = [
         'l' => 15,
         't' => 15,
@@ -49,6 +51,11 @@ class InvoicePrinter extends FPDF
     public $totals;
     public $badge;
     public $addText;
+    public $signature;
+    public $signatureHeader;
+    public $signatureFooter;
+    public $pageNumber;
+    public $subFooter;
     public $footernote;
     public $dimensions;
     public $display_tofrom = true;
@@ -61,12 +68,14 @@ class InvoicePrinter extends FPDF
         $this->items = [];
         $this->totals = [];
         $this->addText = [];
+        $this->subFooter = [];
         $this->firstColumnWidth = 70;
         $this->currency = $currency;
         $this->maxImageDimensions = [230, 130];
         $this->dimensions         = [61.0, 34.0];
         $this->from               = [''];
         $this->to                 = [''];
+        $this->pageNumber = true;
         $this->setLanguage($language);
         $this->setDocumentSize($size);
         $this->setColor('#222222');
@@ -162,7 +171,7 @@ class InvoicePrinter extends FPDF
     {
         try {
             new \DateTimeZone($zone);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
 
@@ -188,17 +197,17 @@ class InvoicePrinter extends FPDF
 
     public function setDate($date)
     {
-        $this->date = $date;
+        $this->date = ' '. $date;
     }
 
     public function setTime($time)
     {
-        $this->time = $time;
+        $this->time = ' '. $time;
     }
 
     public function setDue($date)
     {
-        $this->due = $date;
+        $this->due = ' '. $date;
     }
 
     public function setLogo($logo = 0, $maxWidth = 0, $maxHeight = 0)
@@ -232,12 +241,12 @@ class InvoicePrinter extends FPDF
 
     public function setReference($reference)
     {
-        $this->reference = $reference;
+        $this->reference = ' '. $reference;
     }
 
-    public function setNumberFormat($decimals = '.', $thousands_sep = ',', $alignment = 'left', $space = true, $negativeParenthesis = false)
+    public function setNumberFormat($decimals = '.', $thousands_sep = ',', $alignment = 'left', $space = true, $negativeParenthesis = false, $toRemove = '')
     {
-        $this->referenceformat = [$decimals, $thousands_sep, $alignment, $space, $negativeParenthesis];
+        $this->referenceformat = [$decimals, $thousands_sep, $alignment, $space, $negativeParenthesis, $toRemove];
     }
 
     public function setFontSizeProductDescription($data)
@@ -258,8 +267,9 @@ class InvoicePrinter extends FPDF
         $spaceBetweenCurrencyAndAmount = isset($this->referenceformat[3]) ? (bool) $this->referenceformat[3] : true;
         $space = $spaceBetweenCurrencyAndAmount ? ' ' : '';
         $negativeParenthesis = isset($this->referenceformat[4]) ? (bool) $this->referenceformat[4] : false;
+        $toRemove = $this->referenceformat[5];
 
-        $number = number_format($price, 2, $decimalPoint, $thousandSeparator);
+        $number = str_replace($toRemove, '', number_format($price, 2, $decimalPoint, $thousandSeparator));
         if ($negativeParenthesis && $price < 0) {
             $number = substr($number, 1);
             if ('right' == $alignment) {
@@ -346,6 +356,31 @@ class InvoicePrinter extends FPDF
     {
         $paragraph = $this->br2nl($paragraph);
         $this->addText[] = ['paragraph', $paragraph];
+    }
+
+    public function setSignature($signature)
+    {        
+        $this->signature = $signature;    
+    }
+
+    public function setSignatureHeader($signatureHeader)
+    {
+        $this->signatureHeader = $signatureHeader;
+    }
+
+    public function setSignatureFooter($signatureFooter)
+    {
+        $this->signatureFooter = $signatureFooter;
+    }
+
+    public function showPageNumber($visibility)
+    {
+        $this->pageNumber = $visibility;
+    }
+
+    public function setSubFooter($data)
+    {
+        $this->subFooter = $data;
     }
 
     public function addBadge($badge, $color = false)
@@ -549,7 +584,7 @@ class InvoicePrinter extends FPDF
             $this->Cell(
                 $this->firstColumnWidth,
                 10,
-                iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, mb_strtoupper($this->lang['product'], self::ICONV_CHARSET_INPUT)),
+                iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, mb_strtoupper($this->lang['ref_lib'], self::ICONV_CHARSET_INPUT)),
                 0,
                 0,
                 'L',
@@ -816,22 +851,97 @@ class InvoicePrinter extends FPDF
                 $this->Ln(4);
             }
         }
+
+        //Signature Header       
+        if(isset($this->signatureHeader)){            
+            $this->Ln(2);
+            $this->SetFont($this->font, 'B', 15);            
+            $this->Cell(0, 5, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->signatureHeader), 0, 0, 'R');            
+            $this->SetFont($this->font, '', 9);
+            $this->Ln(7);            
+        }
+
+        //Signature
+        if (isset($this->signature) and !empty($this->signature)) {
+            $rMargin = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) - 25;
+            $this->Image(
+                $this->signature,
+                $rMargin,
+                null,
+                42.0,
+                28.0
+            );
+        }
+
+        //Signature Footer
+        if(isset($this->signatureFooter)){            
+            $this->SetFont($this->font, 'B', 10);            
+            $this->Cell(0, 10, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->signatureFooter), 0, 0, 'R');            
+            $this->SetFont($this->font, '', 9);
+            $this->Ln(7);            
+        }
+
     }
 
     public function Footer()
-    {
-        $this->SetY(-$this->margins['t']);
+    {   
+        $showSubFooter = isset($this->subFooter) and !empty($this->subFooter);
+        $subFooterSpace = 0;  
+        
+        if ($showSubFooter){
+
+            $nb = count($this->subFooter);
+            $rows = $nb / 3;
+
+            if (is_float($rows)) $rows = (int) $rows + 1;
+
+            $subFooterSpace = (isset($this->footernote) ? 5 : 1) * $rows;
+
+        }        
+        
+        $this->SetY(-$this->margins['t'] - $subFooterSpace);
+
+        $width = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / 3;
+        $lineheight = 5;
+
+        if ($showSubFooter){
+
+            $y = 0;
+
+            $this->SetFont($this->font, '', 7);
+
+            for ($i=0; $i < $rows; $i++) { 
+             
+                $this->Ln(1);
+                $this->Cell($width, $lineheight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $y < $nb ? $this->subFooter[$y] : ''), 0, 0, 'C');
+                $this->Cell($width, $lineheight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $y + 1 < $nb ? $this->subFooter[$y + 1] : ''), 0, 0, 'C');        
+                $this->Cell($width, $lineheight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $y + 2 < $nb ? $this->subFooter[$y + 2] : ''), 0, 0, 'C');
+                $this->Ln(6);
+                $this->SetLineWidth(0.1);
+                $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->Line($this->margins['l'] + 2, $this->GetY(), $this->margins['l'] + $width - 2, $this->GetY());
+                $this->Line($this->margins['l'] + $width + 2, $this->GetY(), $this->margins['l'] + $width * 2 - 2, $this->GetY());
+                $this->Line($this->margins['l'] + $width * 2 + 2, $this->GetY(), $this->margins['l'] + $width * 3 - 2, $this->GetY());
+
+                $y += 3;
+                
+            }            
+
+        }                
+
         $this->SetFont($this->font, '', 8);
         $this->SetTextColor(50, 50, 50);
         $this->Cell(0, 10, $this->footernote, 0, 0, 'L');
-        $this->Cell(
-            0,
-            10,
-            iconv('UTF-8', 'ISO-8859-1', $this->lang['page']) . ' ' . $this->PageNo() . ' ' . $this->lang['page_of'] . ' {nb}',
-            0,
-            0,
-            'R'
-        );
+        if ($this->pageNumber){
+            $this->Cell(
+                0,
+                10,
+                iconv('UTF-8', 'ISO-8859-1', $this->lang['page']) . ' ' . $this->PageNo() . ' ' . $this->lang['page_of'] . ' {nb}',
+                0,
+                0,
+                'R'
+            );
+        }        
     }
 
     public function Rotate($angle, $x = -1, $y = -1)

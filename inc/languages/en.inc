@@ -13,3 +13,4 @@
     $lang['total']    = 'Total';
     $lang['page']     = 'Page';
     $lang['page_of']  = 'of';
+    $lang['ref_lib']  = 'Reference & Label';

@@ -3,13 +3,14 @@
     $lang['date']     = 'Date de facturation';
     $lang['time']     = 'Heure de facturation';
     $lang['due']      = 'Date d\'échéance';
-    $lang['to']       = 'Facturé à';
-    $lang['from']     = 'Facturé par';
+    $lang['to']       = 'Envoyé à';
+    $lang['from']     = 'Envoyé par';
     $lang['product']  = 'Produit';
     $lang['qty']      = 'Quantité';
-    $lang['price']    = 'Prix unit. HT';
+    $lang['price']    = 'Prix unitaire HT';
     $lang['discount'] = 'Réduction';
     $lang['vat']      = 'TVA';
     $lang['total']    = 'Total';
     $lang['page']     = 'Page';
     $lang['page_of']  = 'sur';
+    $lang['ref_lib']  = 'Référence & Libellé';

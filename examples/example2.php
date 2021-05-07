@@ -1,6 +1,9 @@
 <?php
 
-include '../InvoicePrinter.php';
+use Konekt\PdfInvoice\InvoicePrinter;
+
+include '../src/InvoicePrinter.php';
+
 $invoice = new InvoicePrinter();
   /* Header Settings */
   $invoice->setLogo('images/example3.jpg');
@@ -29,4 +32,4 @@ $invoice = new InvoicePrinter();
   /* Set footer note */
   $invoice->setFooternote('My Company Name Here');
   /* Render */
-  $invoice->render('example2.pdf', 'D'); /* I => Display on browser, D => Force Download, F => local path save, S => return document path */
+  $invoice->render('example2.pdf', 'I'); /* I => Display on browser, D => Force Download, F => local path save, S => return document path */
