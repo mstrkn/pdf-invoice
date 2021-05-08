@@ -49,6 +49,7 @@ class InvoicePrinter extends FPDF
     public $to;
     public $items;
     public $totals;
+    public $totalsAlignment = 'vertical';
     public $badge;
     public $addText;
     public $signature;
@@ -386,6 +387,11 @@ class InvoicePrinter extends FPDF
     public function setSubFooter($data)
     {
         $this->subFooter = $data;
+    }
+
+    public function setTotalsAlignment($alignment)
+    {
+        $this->totalsAlignment = $alignment;        
     }
 
     public function addBadge($badge, $color = false)
@@ -770,53 +776,83 @@ class InvoicePrinter extends FPDF
         $badgeY = $this->getY();
 
         //Add totals
-        /* if ($this->totals) {
-            foreach ($this->totals as $total) {
-                $this->SetTextColor(50, 50, 50);
-                $this->SetFillColor($bgcolor, $bgcolor, $bgcolor);
-                $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
-                for ($i = 0; $i < $this->columns - 3; $i++) {
-                    $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
-                    $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                }
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                if ($total['colored']) {
-                    $this->SetTextColor(255, 255, 255);
-                    $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-                }
-                $this->SetFont($this->font, 'b', 8);
-                $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
-                $this->Cell(
-                    $width_other - 1,
-                    $cellHeight,
-                    iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $total['name']),
-                    0,
-                    0,
-                    'L',
-                    1
-                );
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                $this->SetFont($this->font, 'b', 8);
-                $this->SetFillColor($bgcolor, $bgcolor, $bgcolor);
-                if ($total['colored']) {
-                    $this->SetTextColor(255, 255, 255);
-                    $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-                }
-                $this->Cell($width_other, $cellHeight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $total['value']), 0, 0, 'C', 1);
-                $this->Ln();
-                $this->Ln($this->columnSpacing);
-            }
-        } */
         if ($this->totals) {
-            $totals_names = array();
-            $totals_values = array();
-            foreach ($this->totals as $total) {
-                array_push($totals_names, $total['name']);
-                array_push($totals_values, $total['value']);
+            if ($this->totalsAlignment == 'horizontal'){                                               
+                $this->Ln(2);                            
+                $totalsCount = count($this->totals);
+                $cellWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / $totalsCount;
+                // Colors, line width and bold font
+                $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->SetTextColor(255);
+                $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);        
+                $this->SetLineWidth(.3);
+                $this->SetFont('','B');
+                // Header        
+                for($i=0;$i<$totalsCount;$i++)
+                    $this->Cell(
+                        $totalsCount % 2 == 0 ? ($i % 2 == 0 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
+                        7,
+                        iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $this->totals[$i]['name']),
+                        1,
+                        0,
+                        'C',
+                        true
+                    );
+                $this->Ln();
+                // Color and font restoration
+                $this->SetFillColor(224,235,255);
+                $this->SetTextColor(0);
+                $this->SetFont('','B');
+                // Values        
+                for($y=0;$y<$totalsCount;$y++)                
+                    $this->Cell(
+                        $totalsCount % 2 == 0 ? ($y % 2 == 0 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
+                        6,
+                        iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $this->totals[$y]['value']),
+                        'LRB',
+                        0,
+                        'C',
+                        $this->totals[$y]['colored']
+                    );                                                    
+                $this->Ln();
+            }else{
+                foreach ($this->totals as $total) {
+                    $this->SetTextColor(50, 50, 50);
+                    $this->SetFillColor($bgcolor, $bgcolor, $bgcolor);
+                    $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
+                    for ($i = 0; $i < $this->columns - 3; $i++) {
+                        $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
+                        $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+                    }
+                    $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+                    if ($total['colored']) {
+                        $this->SetTextColor(255, 255, 255);
+                        $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+                    }
+                    $this->SetFont($this->font, 'b', 8);
+                    $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
+                    $this->Cell(
+                        $width_other - 1,
+                        $cellHeight,
+                        iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $total['name']),
+                        0,
+                        0,
+                        'L',
+                        1
+                    );
+                    $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+                    $this->SetFont($this->font, 'b', 8);
+                    $this->SetFillColor($bgcolor, $bgcolor, $bgcolor);
+                    if ($total['colored']) {
+                        $this->SetTextColor(255, 255, 255);
+                        $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+                    }
+                    $this->Cell($width_other, $cellHeight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $total['value']), 0, 0, 'C', 1);
+                    $this->Ln();
+                    $this->Ln($this->columnSpacing);
+                }
             }
-            $this->Ln();
-            $this->TotalTable($totals_names, $totals_values);
-        }
+        }                        
         $this->productsEnded = true;
         $this->Ln();
         $this->Ln(3);
@@ -826,7 +862,7 @@ class InvoicePrinter extends FPDF
             $badge = ' ' . mb_strtoupper($this->badge, self::ICONV_CHARSET_INPUT) . ' ';
             $resetX = $this->getX();
             $resetY = $this->getY();
-            $this->setXY($badgeX, $badgeY + 15);
+            $this->setXY($badgeX, $badgeY + ($this->totalsAlignment == 'horizontal' ? 25 : 15));
             $this->SetLineWidth(0.4);
             $this->SetDrawColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
             $this->setTextColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
@@ -1022,30 +1058,5 @@ class InvoicePrinter extends FPDF
             $this->columns += 1;
         }
     }
-
-    function TotalTable($header, $data)
-    {
-        // Colors, line width and bold font
-        $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-        $this->SetTextColor(255);
-        $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);        
-        $this->SetLineWidth(.3);
-        $this->SetFont('','B');
-        // Header        
-        for($i=0;$i<count($header);$i++)
-            $this->Cell($i % 2 == 0 ? 35 : 30,7,$header[$i],1,0,'C',true);
-        $this->Ln();
-        // Color and font restoration
-        $this->SetFillColor(224,235,255);
-        $this->SetTextColor(0);
-        $this->SetFont('');
-        // Data        
-        for($y=0;$y<count($data);$y++)
-        {
-            $this->Cell($y % 2 == 0 ? 35 : 30,6,$data[$y],'LRB',0,'C',$y == count($data) - 1);            
-        }        
-        // Closing line        
-        $this->Ln();
-        $this->Ln($this->columnSpacing);
-    }
+    
 }
