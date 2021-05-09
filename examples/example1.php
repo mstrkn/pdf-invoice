@@ -28,7 +28,7 @@ $invoice->setNumberFormat(',', '.', 'right', true, false, array(',00'));
   $invoice->addTotal('Shipping costs', 5400);
   $invoice->addTotal('Total TTC', 11446.6, true);
   /* Set badge */
-  $invoice->addBadge('Payment Paid', true);  
+  $invoice->addBadge('Payment Paid');  
   /* Add title */
   $invoice->addTitle('Important Notice');
   /* Add Paragraph */

@@ -783,10 +783,10 @@ class InvoicePrinter extends FPDF
                 $cellWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / $totalsCount;
                 // Colors, line width and bold font
                 $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-                $this->SetTextColor(255);
+                $this->SetTextColor(255, 255, 255);
                 $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);        
                 $this->SetLineWidth(.3);
-                $this->SetFont('','B');
+                $this->SetFont($this->font, 'b', 8);
                 // Header        
                 for($i=0;$i<$totalsCount;$i++)
                     $this->Cell(
@@ -799,11 +799,10 @@ class InvoicePrinter extends FPDF
                         true
                     );
                 $this->Ln();
-                // Color and font restoration
-                $this->SetFillColor(224,235,255);
-                $this->SetTextColor(0);
-                $this->SetFont('','B');
-                // Values        
+                // Values                
+                $this->SetTextColor(50, 50, 50);
+                $this->SetFont($this->font, 'b', 8);
+                $this->SetFillColor($bgcolor, $bgcolor, $bgcolor);
                 for($y=0;$y<$totalsCount;$y++)                
                     $this->Cell(
                         $totalsCount % 2 == 0 ? ($y % 2 == 0 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
