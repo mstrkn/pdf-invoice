@@ -451,7 +451,8 @@ class InvoicePrinter extends FPDF
             )
             - max(
                 $this->GetStringWidth(mb_strtoupper($this->reference, self::ICONV_CHARSET_INPUT)),
-                $this->GetStringWidth(mb_strtoupper($this->date, self::ICONV_CHARSET_INPUT))
+                $this->GetStringWidth(mb_strtoupper($this->date, self::ICONV_CHARSET_INPUT)),
+                $this->GetStringWidth(mb_strtoupper($this->due, self::ICONV_CHARSET_INPUT))
             );
 
         //Number
@@ -468,7 +469,14 @@ class InvoicePrinter extends FPDF
             );
             $this->SetTextColor(50, 50, 50);
             $this->SetFont($this->font, '', 9);
-            $this->Cell(0, $lineheight, $this->reference, 0, 1, 'R');
+            $this->Cell(
+                0, 
+                $lineheight, 
+                iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->reference), 
+                0, 
+                1, 
+                'R'
+            );
         }
         //Date
         $this->Cell($positionX, $lineheight);
@@ -477,7 +485,14 @@ class InvoicePrinter extends FPDF
         $this->Cell(32, $lineheight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, mb_strtoupper($this->lang['date'], self::ICONV_CHARSET_INPUT)) . ':', 0, 0, 'L');
         $this->SetTextColor(50, 50, 50);
         $this->SetFont($this->font, '', 9);
-        $this->Cell(0, $lineheight, $this->date, 0, 1, 'R');
+        $this->Cell(
+            0, 
+            $lineheight, 
+            iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->date), 
+            0, 
+            1, 
+            'R'
+        );
 
         //Time
         if (!empty($this->time)) {
@@ -494,7 +509,14 @@ class InvoicePrinter extends FPDF
             );
             $this->SetTextColor(50, 50, 50);
             $this->SetFont($this->font, '', 9);
-            $this->Cell(0, $lineheight, $this->time, 0, 1, 'R');
+            $this->Cell(
+                0, 
+                $lineheight, 
+                iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->time), 
+                0, 
+                1, 
+                'R'
+            );
         }
         //Due date
         if (!empty($this->due)) {
@@ -504,7 +526,14 @@ class InvoicePrinter extends FPDF
             $this->Cell(32, $lineheight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, mb_strtoupper($this->lang['due'], self::ICONV_CHARSET_INPUT)) . ':', 0, 0, 'L');
             $this->SetTextColor(50, 50, 50);
             $this->SetFont($this->font, '', 9);
-            $this->Cell(0, $lineheight, $this->due, 0, 1, 'R');
+            $this->Cell(
+                0, 
+                $lineheight, 
+                iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->due), 
+                0, 
+                1, 
+                'R'
+            );
         }
         //Custom Headers
         if (count($this->customHeaders) > 0) {
